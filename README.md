@@ -6,3 +6,5 @@
  Screen shot:
 
 ![Alt text](RPiAntDrv_Screenshot.png?raw=true "Screenshot")
+
+This open source project is licensed under the terms of the MIT license.
