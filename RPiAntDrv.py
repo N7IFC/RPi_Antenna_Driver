@@ -26,6 +26,15 @@ class Window(Frame):
         #reference to the master widget, which is the tk window                 
         self.master = master
         
+        # Raspberry Pi I/O pins get reassigned when ini file is read
+        #self.pwm_pin = 12      # H-Bridge PWM
+        #self.dir1_pin = 16     # H-Bridge control
+        #self.dir2_pin = 18     # H-Bridge control
+        #self.encoder_pin = 22  # Antenna encoder switch
+        self.pwm_freq = 3000   # PWM Freq in Hz
+        self.pwm_duty = 0      # PWM Duty in percent, default to 0
+        self.stall_time = 250  # Motor stall time in mS
+        
         self.encoder_count = IntVar()     # Antenna reed switch count
         self.encoder_count.set(0)
         self.motor_rev = BooleanVar()     # Reverse motor leads
@@ -103,9 +112,14 @@ class Window(Frame):
         self.lower_button.bind("<ButtonRelease>", self.RL_button_release)
 
         self.move_button = Button(text='Move', relief=RAISED, bd=4, padx=1,
-               pady=1, height=2, width=6, font=('Helvetica', 14))
+               pady=1, height=1, width=6, font=('Helvetica', 14))
         self.move_button.grid(row=4,column=0, padx=5, pady=5)
         self.move_button.bind("<ButtonPress>", self.move_button_press)
+
+        self.sync_button = Button(text='Sync', relief=RAISED, bd=4, padx=1,
+               pady=1, height=1, width=6, font=('Helvetica', 14))
+        self.sync_button.grid(row=5,column=0, padx=5, pady=5)
+        self.sync_button.bind("<ButtonPress>", self.sync_button_press)
         
         self.duty_scale = Scale(label='PWM Duty Cycle (%)', from_=1, to=100, orient = HORIZONTAL,
                                resolution = 1, length=200, command = self.update_pwm_duty)
@@ -118,12 +132,12 @@ class Window(Frame):
         self.motor_rev_btn = Checkbutton(text="Reverse Leads", bg = self.bg_color,
                                          activebackground = self.bg_color,
                                          highlightthickness=0, variable=self.motor_rev)
-        self.motor_rev_btn.grid(row=4, column=1, sticky=SW)
+        self.motor_rev_btn.grid(row=5, column=1, sticky=W)
         
         # Antenna preset combo box is populated with values from ini file
         self.preset_combobox = ttk.Combobox(width=18, font=('Helvetica', 14),
                                             state='readonly')
-        self.preset_combobox.grid(row=4, column=1, sticky=N)
+        self.preset_combobox.grid(row=4, column=1)
         self.preset_combobox.bind("<<ComboboxSelected>>", self.get_preset_val)
         
         self.ini_test ()  # Check for ini file existence
@@ -146,6 +160,11 @@ class Window(Frame):
     def move_button_press(self, _unused):
         self.motor_stalled = 0
         self.motor_move()
+        
+    def sync_button_press(self, _unused):
+        print ('Sync')
+        # Sychronize encoder count with current preset value
+        self.encoder_count.set(self.ant_preset_val)
         
     def motor_up(self):
         # We can change speed on the fly
@@ -180,7 +199,7 @@ class Window(Frame):
                 GPIO.output(self.dir2_pin, GPIO.LOW)
             self.motor_running = 1
             self.antenna_raising = 0
-            # Initialize stall counter and start stall timer
+            # Initialize stall detection
             self.motor_stall()
         
     def motor_stop(self):
@@ -191,8 +210,8 @@ class Window(Frame):
         #self.ini_update()
 
     def motor_stall(self):
-        # Set stall period proportional to current motor speed
-        self.stall_time = int(250)
+        # Set stall period proportional to motor speed
+        # self.stall_time = int(250)
         self.stall_period = int((100 / self.duty_scale.get())* self.stall_time)
         # If motor is still running, perform stall check
         if (self.motor_running):
@@ -211,7 +230,7 @@ class Window(Frame):
             # Else reset stall count and timer
             else:
                 self.stall_count = self.encoder_count.get()
-                print ('No stall, proceed')
+                #print ('No stall, proceed')
                 self.master.after(self.stall_period, self.motor_stall)
         else:
             self.stall_active = 0
@@ -248,16 +267,13 @@ class Window(Frame):
             self.motor_up()
         # after 100mS, call this function again
         self.master.after(100, self.motor_move)
-        
+
     def get_preset_val(self, _unused):
+        # get the preset value stored in the ini file
         config = configparser.ConfigParser()
         config.read ('RPiAntDrv.ini')
-        #print (_unused)
-        #print (self.preset_combobox.get())
-        #print (config.getint(self.ant_preset_sect, self.ant_preset_opt))
-        #print (config.getint(self.ant_preset_sect, self.preset_combobox.get()))        
         self.ant_preset_val = (config.getint(self.ant_preset_sect, self.preset_combobox.get()))
-        print (self.ant_preset_val)
+        #print (self.ant_preset_val)
         
     def update_pwm_duty(self, _unused):
         self.pwm_duty = self.duty_scale.get()
@@ -270,13 +286,6 @@ class Window(Frame):
     def gpioconfig(self): # Configure GPIO pins
         GPIO.setwarnings(False)
         GPIO.cleanup()                 # In case user changes running configuration
-        
-        self.pwm_pin = 12      # H-Bridge PWM
-        self.dir1_pin = 16     # H-Bridge control
-        self.dir2_pin = 18     # H-Bridge control
-        self.encoder_pin = 22  # Antenna encoder switch
-        self.pwm_freq = 400    # Freq in Hz
-        self.pwm_duty = 0      # Duty in percent, default to 0
         
         GPIO.setmode(GPIO.BOARD)                   # Refer to IO as Board header pins
         GPIO.setup(self.dir1_pin, GPIO.OUT)        # Direction output 1 to H-bridge
@@ -306,50 +315,50 @@ class Window(Frame):
     def ini_new(self): # Set up an ini file if it does not exist
         # Configuration file parser to read and write ini file
         config = configparser.ConfigParser()
-        # Set the Raspberry Pi I/O pin defaults
-        config['RPiPins'] = {'pwm_pin': '12',
-                             'dir1_pin': '16',
-                             'dir2_pin': '18',
-                             'encoder_pin': '22'}
-        
         # User configurable program settings
-        config['Settings'] = {'last_position':'0',
-                              'ant_config_sect': 'Ant1_Config',
-                              'ant_preset_sect': 'Ant1_Preset',
-                              'ant_preset_opt': '20m 14.400 (037)'}
+        config['Settings'] = {'pwm_pin':'12',
+                              'dir1_pin':'16',
+                              'dir2_pin':'18',
+                              'encoder_pin':'22',
+                              'last_position':'0',
+                              'ant_config_sect':'Ant1_Config',
+                              'ant_preset_sect':'Ant1_Preset',
+                              'ant_preset_opt':'20m 14.400 (037)'}
         
         # Set up default antennas
-        config['Ant1_Config'] = {'name': 'Antenna1',
-                               'rev_pol': 'no',
-                               'pwm_freq': '4000',
-                               'pwm_duty': '50',
-                               'min_freq': '3500',
-                               'max_freq': '29700'}
+        config['Ant1_Config'] = {'name':'Antenna1',
+                               'rev_pol':'no',
+                               'pwm_freq':'4000',
+                               'pwm_duty':'50',
+                               'stall_time':'250',
+                               'min_freq':'3500',
+                               'max_freq':'29700'}
         
         config['Ant1_Preset'] = {'80m _3.500 (226)': '226',
-                                  '80m _4.000 (192)': '192',
-                                  '60m _5.300 (130)': '130',
-                                  '60m _5.400 (127)': '127',
-                                  '40m _7.000 (092)': '92',
-                                  '40m _7.300 (087)': '87',
-                                  '30m 10.000 (056)': '56',
-                                  '30m 10.200 (054)': '54',
-                                  '20m 14.000 (039)': '39',
-                                  '20m 14.400 (037)': '37'}        
+                                '80m _4.000 (192)': '192',
+                                '60m _5.300 (130)': '130',
+                                '60m _5.400 (127)': '127',
+                                '40m _7.000 (092)': '92',
+                                '40m _7.300 (087)': '87',
+                                '30m 10.000 (056)': '56',
+                                '30m 10.200 (054)': '54',
+                                '20m 14.000 (039)': '39',
+                                '20m 14.400 (037)': '37'}        
 
-        config['Ant2_Config'] = {'name': 'Antenna2',
-                               'rev_pol': 'yes',
-                               'pwm_freq': '2000',
-                               'pwm_duty': '50',
-                               'min_freq': '3500',
-                               'max_freq': '29700'}
+        config['Ant2_Config'] = {'name':'Antenna2',
+                               'rev_pol':'yes',
+                               'pwm_freq':'2000',
+                               'pwm_duty':'50',
+                               'stall_time':'250',
+                               'min_freq':'3500',
+                               'max_freq':'29700'}
         
-        config['Ant2_Preset'] = {'3.500': '226',
-                                  '4.000': '192',
-                                  '7.000': '92',
-                                  '7.300': '87',
-                                  '14.000': '39',
-                                  '14.400': '37'}       
+        config['Ant2_Preset'] = {'3.500':'226',
+                                  '4.000':'192',
+                                  '7.000':'92',
+                                  '7.300':'87',
+                                  '14.000':'39',
+                                  '14.400':'37'}       
         
         # Save the default configuration file
         with open('RPiAntDrv.ini', 'w') as configfile:
@@ -370,15 +379,21 @@ class Window(Frame):
         # Read ini file and set up parameters
         config = configparser.ConfigParser()
         config.read ('RPiAntDrv.ini')
-        #print (config.get ('RPiPins', 'dir1_pin', fallback='50'))
-        self.freq_scale.set(config.getint ('Ant1_Config','pwm_freq',fallback=120))
+        # Retrieve settings
+        self.pwm_pin = (config.getint ('Settings','pwm_pin',fallback=12))
+        self.dir1_pin = (config.getint ('Settings','dir1_pin',fallback=16))
+        self.dir2_pin = (config.getint ('Settings','dir2_pin',fallback=18))
+        self.encoder_pin = (config.getint ('Settings','encoder_pin',fallback=22))
+        self.freq_scale.set(config.getint ('Ant1_Config','pwm_freq',fallback=4000))
         self.duty_scale.set(config.getint ('Ant1_Config','pwm_duty',fallback=50))
+        self.stall_time = (config.getint ('Ant1_Config','stall_time',fallback=250))
         #print (config.get ('Ant1_Preset', name))
         #for section_name in config.sections():
         #    print ('Section:', section_name)
         #    print ('  Options:', config.options(section_name))
         #    for name, value in config.items(section_name):
         #        print ('  %s = %s' % (name, value))
+        
         # Set up the active ini file section and option names
         self.ant_config_sect = (config.get ('Settings','ant_config_sect',fallback='Ant1_Config'))
         self.ant_preset_sect = (config.get ('Settings','ant_preset_sect',fallback='Ant1_Preset'))
