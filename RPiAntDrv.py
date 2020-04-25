@@ -13,6 +13,7 @@
 
 from tkinter import *
 from tkinter import ttk
+from tkinter import messagebox
 import configparser
 import RPi.GPIO as GPIO
 
@@ -22,7 +23,7 @@ class Window(Frame):
         
         # parameters to send through the Frame class. 
         Frame.__init__(self, master)   
-
+     
         #reference to the master widget, which is the tk window                 
         self.master = master
         
@@ -48,18 +49,20 @@ class Window(Frame):
         self.ant_preset_sect = ("null")   # Active ini file preset section
         self.ant_preset_opt = ("null")    # Active ini file preset option
         self.ant_preset_val = 0           # Preset encoder target value from combobox
+        self.status_message = StringVar() # Status message text for text_5
+        self.status_message.set ("Ready")
         
         # Run init_window, which doesn't yet exist
         self.init_window()
-
+     
     #Creation of init_window
     def init_window(self):
-        self.master.title('RPi Antenna Driver (v1.5)')
+        self.master.title('RPi Antenna Driver (v1.6)')
         # Set up root window & size (width x height + x_offset + y_offset)
         self.bg_color = 'azure'
         self.master.geometry("400x300+30+30")
         self.master.configure(bg= self.bg_color)
-
+     
         # Create menu entry and sub-options
         menubar = Menu(self.master)
         self.master.config(menu=menubar)        
@@ -70,21 +73,21 @@ class Window(Frame):
         filemenu.add_separator()
         filemenu.add_command(label="Quit", command=self.close)
         menubar.add_cascade(label="File", menu=filemenu)
-
+     
         editmenu = Menu(menubar, tearoff=0)
-        editmenu.add_command(label="Default ini", command=self.ini_new)
-        editmenu.add_command(label="Undefined 1", command=self.about)
+        editmenu.add_command(label="Default ini", command=self.confirm_newini)
+        editmenu.add_command(label="Sync Count", command=self.confirm_sync)
         editmenu.add_command(label="Undefined 2", command=self.about)
         menubar.add_cascade(label="Edit", menu=editmenu)
-
+     
         helpmenu = Menu(menubar, tearoff=0)
         helpmenu.add_command(label="About", command=self.about)
         menubar.add_cascade(label="Help", menu=helpmenu)
-
+     
         text_1 = Label(text='Antenna', font = ('Helvetica', 14),
                        bg = self.bg_color, fg='black', padx=10, height=2, anchor=S)
         text_1.grid(row=0, column=0, columnspan=1)
-
+     
         text_2 = Label(text='Motor Control', font = ('Helvetica', 14),
                        bg = self.bg_color, fg='black', padx=20, height=2, anchor=S)
         text_2.grid(row=0, column=1, columnspan=1)
@@ -93,11 +96,23 @@ class Window(Frame):
                        font = ('Helvetica', 14), bg = self.bg_color, fg='black',
                        padx=20, height=1, anchor=SW)
         text_3.grid(row=3, column=0, columnspan=1, sticky=S)
- 
+      
         text_4 = Label(text='Current Preset',
                        font = ('Helvetica', 14), bg = self.bg_color, fg='black',
                        padx=20, height=1, anchor=S)
         text_4.grid(row=3, column=1, columnspan=1, sticky=S)
+        
+        text_5 = Label(text='Status:',
+                       font = ('Helvetica', 11), bg = self.bg_color, fg='black',
+                       padx=5, height=1, anchor=E)
+        text_5.grid(row=6, column=0, columnspan=1, sticky=E)
+        
+     
+        text_6 = Label(textvariable=self.status_message,
+                       font = ('Helvetica', 11), bg='white', fg='black',
+                       padx=5, height=1, anchor=W, width=23,
+                       borderwidth=1, relief="solid")
+        text_6.grid(row=6, column=1, columnspan=1, sticky=W)
         
         self.raise_button = Button(text='Raise', relief=RAISED, bd=4, padx=1,
                pady=1, height=2, width=6, font=('Helvetica', 14))
@@ -110,21 +125,16 @@ class Window(Frame):
         self.lower_button.grid(row=2, column=0, padx=20, pady=5)
         self.lower_button.bind("<ButtonPress>", self.lower_button_press)
         self.lower_button.bind("<ButtonRelease>", self.RL_button_release)
-
+     
         self.move_button = Button(text='Move', relief=RAISED, bd=4, padx=1,
-               pady=1, height=1, width=6, font=('Helvetica', 14))
-        self.move_button.grid(row=4,column=0, padx=5, pady=5)
+               pady=1, height=2, width=6, font=('Helvetica', 14))
+        self.move_button.grid(row=4,column=0, padx=5, pady=5, rowspan=2)
         self.move_button.bind("<ButtonPress>", self.move_button_press)
-
-        self.sync_button = Button(text='Sync', relief=RAISED, bd=4, padx=1,
-               pady=1, height=1, width=6, font=('Helvetica', 14))
-        self.sync_button.grid(row=5,column=0, padx=5, pady=5)
-        self.sync_button.bind("<ButtonPress>", self.sync_button_press)
         
         self.duty_scale = Scale(label='PWM Duty Cycle (%)', from_=1, to=100, orient = HORIZONTAL,
                                resolution = 1, length=200, command = self.update_pwm_duty)
         self.duty_scale.grid(row=1,column=1)
-
+     
         self.freq_scale = Scale(label='PWM Frequency (Hz)', from_=50, to=8000, orient = HORIZONTAL,
                                 resolution = 1, length=200, command = self.update_pwm_freq)
         self.freq_scale.grid(row=2,column=1)
@@ -145,7 +155,7 @@ class Window(Frame):
         self.gpioconfig() # Set up GPIO for antenna control
         
         return
- 
+     
     def raise_button_press(self, _unused):
         self.motor_stalled = 0
         self.motor_up ()
@@ -156,15 +166,38 @@ class Window(Frame):
         
     def RL_button_release(self, _unused):
         self.motor_stop ()
-
+        self.status_message.set ("Ready")
+     
     def move_button_press(self, _unused):
         self.motor_stalled = 0
         self.motor_move()
         
-    def sync_button_press(self, _unused):
-        print ('Sync')
-        # Sychronize encoder count with current preset value
-        self.encoder_count.set(self.ant_preset_val)
+    def confirm_newini(self):
+        okay = messagebox.askokcancel('RPiAntDrv',
+                                        'Overwrite Configuration File?',
+                                        detail='This will overwrite the '
+                                      'RPiAntDrv.ini file with default '
+                                      'values.', icon='question')
+        if okay:
+            # Overwrite the ini file and refresh values
+            self.ini_new()
+            self.ini_read()
+            self.status_message.set ("ini written")
+        else:
+            self.status_message.set ("operation Cancelled")
+            
+    def confirm_sync(self):
+        okay = messagebox.askokcancel('RPiAntDrv',
+                                        'Proceed with Sync?',
+                                        detail='This will sychronize the '
+                                      'antenna encoder count to the preset '
+                                      'value selected.', icon='question')
+        if okay:
+            # Sychronize encoder count with current preset value
+            self.encoder_count.set(self.ant_preset_val)
+            self.status_message.set ("Syncronized")
+        else:
+            self.status_message.set ("Sync Canceled")
         
     def motor_up(self):
         # We can change speed on the fly
@@ -208,7 +241,7 @@ class Window(Frame):
         self.pwm_set.ChangeDutyCycle(0)      # Kill PWM
         self.motor_running = 0
         #self.ini_update()
-
+     
     def motor_stall(self):
         # Set stall period proportional to motor speed
         # self.stall_time = int(250)
@@ -217,7 +250,7 @@ class Window(Frame):
         if (self.motor_running):
             # If stall detection is not already active
             if not(self.stall_active):
-                print ('stall period ' + str(self.stall_period))
+                # print ('stall period ' + str(self.stall_period))
                 self.stall_count = self.encoder_count.get()
                 self.stall_active = 1
                 self.master.after(self.stall_period, self.motor_stall)
@@ -226,7 +259,7 @@ class Window(Frame):
                 self.motor_stalled = 1
                 self.motor_stop()
                 self.stall_active = 0
-                print ('We are stalled')
+                self.status_message.set ("Antenna Stalled!")
             # Else reset stall count and timer
             else:
                 self.stall_count = self.encoder_count.get()
@@ -243,31 +276,28 @@ class Window(Frame):
         # If encoder count = preset, stop and exit
         if self.encoder_count.get() == (self.ant_preset_val):
             self.motor_stop()
-            print ('We have arrived')
+            self.status_message.set ("We have arrived")
             return
         # If encoder count within 5 counts of preset, slow down
         Lval= (self.ant_preset_val -5)
         Hval= (self.ant_preset_val +6)
-        print (self.encoder_count.get())
         if self.encoder_count.get() in range(Lval, Hval):
-            print ('Slow Down')
+            self.status_message.set ("Slowing Down")
             self.duty_scale.set(25)
         # Else run full speed    
         else:
-            print ('Full Speed')
+            self.status_message.set ("Full Speed")
             self.duty_scale.set(100)
             
         # If encoder count > preset drive antenna down
         if self.encoder_count.get() > (self.ant_preset_val):
-            print ('Drive Down')
             self.motor_down()
         # Else drive antenna up
         else:
-            print ('Drive Up')
             self.motor_up()
         # after 100mS, call this function again
         self.master.after(100, self.motor_move)
-
+     
     def get_preset_val(self, _unused):
         # get the preset value stored in the ini file
         config = configparser.ConfigParser()
@@ -278,7 +308,7 @@ class Window(Frame):
     def update_pwm_duty(self, _unused):
         self.pwm_duty = self.duty_scale.get()
         #print (_unused)
-
+     
     def update_pwm_freq(self, _unused):
         self.pwm_freq = self.freq_scale.get()
         #print (_unused)
@@ -301,9 +331,9 @@ class Window(Frame):
         self.pwm_set = GPIO.PWM(self.pwm_pin, self.pwm_freq) # Set up PWM for use
         #self.pwm_set.stop()                       # Stop pwm output
         self.pwm_set.start(self.pwm_duty)          # Start pwm output at 0%
-
+     
         GPIO.setwarnings(True)
-
+     
     def encoder_ISR(self, _channel):
         # Do as little as possible in the ISR, get in and get out!
         # Increment the encoder count and jump out
@@ -334,17 +364,18 @@ class Window(Frame):
                                'min_freq':'3500',
                                'max_freq':'29700'}
         
-        config['Ant1_Preset'] = {'80m _3.500 (226)': '226',
-                                '80m _4.000 (192)': '192',
-                                '60m _5.300 (130)': '130',
-                                '60m _5.400 (127)': '127',
-                                '40m _7.000 (092)': '92',
-                                '40m _7.300 (087)': '87',
-                                '30m 10.000 (056)': '56',
-                                '30m 10.200 (054)': '54',
-                                '20m 14.000 (039)': '39',
-                                '20m 14.400 (037)': '37'}        
-
+        config['Ant1_Preset'] = {'80m _3.500 (226)':'226',
+                                '80m _4.000 (192)':'192',
+                                '60m _5.300 (130)':'130',
+                                '60m _5.400 (127)':'127',
+                                '40m _7.000 (092)':'92',
+                                '40m _7.300 (087)':'87',
+                                '30m 10.000 (056)':'56',
+                                '30m 10.200 (054)':'54',
+                                '20m 14.000 (039)':'39',
+                                '20m 14.400 (037)':'37',
+                                'Park Pos.  (000)':'0'}        
+     
         config['Ant2_Config'] = {'name':'Antenna2',
                                'rev_pol':'yes',
                                'pwm_freq':'2000',
@@ -353,12 +384,12 @@ class Window(Frame):
                                'min_freq':'3500',
                                'max_freq':'29700'}
         
-        config['Ant2_Preset'] = {'3.500':'226',
-                                  '4.000':'192',
-                                  '7.000':'92',
-                                  '7.300':'87',
-                                  '14.000':'39',
-                                  '14.400':'37'}       
+        config['Ant2_Preset'] = {'80m _3.700 (200)':'200',
+                                '60m _5.350 (129)':'129',
+                                '40m _7.250 (090)':'90',
+                                '30m 10.100 (055)':'55',
+                                '20m 14.200 (038)':'38',
+                                'Park Pos.  (000)':'0'}
         
         # Save the default configuration file
         with open('RPiAntDrv.ini', 'w') as configfile:
@@ -374,7 +405,7 @@ class Window(Frame):
             #Does not exist OR no read permissions
             print ("Unable to open Ini file, creating new one.")
             self.ini_new ()
-    
+     
     def ini_read(self):
         # Read ini file and set up parameters
         config = configparser.ConfigParser()
@@ -387,13 +418,6 @@ class Window(Frame):
         self.freq_scale.set(config.getint ('Ant1_Config','pwm_freq',fallback=4000))
         self.duty_scale.set(config.getint ('Ant1_Config','pwm_duty',fallback=50))
         self.stall_time = (config.getint ('Ant1_Config','stall_time',fallback=250))
-        #print (config.get ('Ant1_Preset', name))
-        #for section_name in config.sections():
-        #    print ('Section:', section_name)
-        #    print ('  Options:', config.options(section_name))
-        #    for name, value in config.items(section_name):
-        #        print ('  %s = %s' % (name, value))
-        
         # Set up the active ini file section and option names
         self.ant_config_sect = (config.get ('Settings','ant_config_sect',fallback='Ant1_Config'))
         self.ant_preset_sect = (config.get ('Settings','ant_preset_sect',fallback='Ant1_Preset'))
@@ -402,22 +426,20 @@ class Window(Frame):
         self.preset_combobox['values']=(config.options(self.ant_preset_sect))
         self.preset_combobox.set(self.ant_preset_opt)
         # Set the encoder count to preset value
-        print (config.getint(self.ant_preset_sect, self.ant_preset_opt))
-        #self.encoder_count.set (config.getint(self.ant_preset_sect, self.ant_preset_opt))
         self.encoder_count.set (config.getint('Settings','last_position',fallback=0))
+        self.status_message.set ("Configuration file loaded")
         
     def ini_update(self):
         config = configparser.ConfigParser()
-        print ('updating ini')
         # Perform read-modify-write of ini file
         # Note: Anytyhing written must be a string value
         config.read ('RPiAntDrv.ini')
         config.set('Settings','last_position',str(self.encoder_count.get()))
-
         # Save modified configuration file
         with open('RPiAntDrv.ini', 'w') as configfile:
             config.write(configfile)
-            
+        self.status_message.set ("ini file updated")
+        
     def close(self): # Cleanly close the GUI and cleanup the GPIO
         self.ini_update()   # Save current settings
         GPIO.cleanup()
@@ -430,7 +452,7 @@ class Window(Frame):
         popup.geometry("350x250+30+30")
         popup.configure(bg= 'snow')
         
-        popup_text1 = Label(popup, text='RPiAntDrv.py   v1.5',
+        popup_text1 = Label(popup, text='RPiAntDrv.py   v1.6',
                            font = ('Helvetica', 12), wraplength=300, justify=LEFT,
                            bg = 'snow', fg='black', padx=10, pady=10)
         popup_text1.grid(row=0, column=0, columnspan=1)
