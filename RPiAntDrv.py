@@ -7,7 +7,7 @@
 # H-Bridge drives single DC motor tuned antenna.
 #
 #            Name          Call  Date(s)
-# Authors:   Bill Peterson N7IFC Mar-Apr2020
+# Authors:   Bill Peterson N7IFC Mar-May2020
 #
 ##################################################################
 
@@ -23,34 +23,26 @@ class Window(Frame):
         
         # parameters to send through the Frame class. 
         Frame.__init__(self, master)   
-     
+
         #reference to the master widget, which is the tk window                 
         self.master = master
         
         # Raspberry Pi I/O pins get reassigned when ini file is read
-        #self.pwm_pin = 12      # H-Bridge PWM
-        #self.dir1_pin = 16     # H-Bridge control
-        #self.dir2_pin = 18     # H-Bridge control
-        #self.encoder_pin = 22  # Antenna encoder switch
-        self.pwm_freq = 3000   # PWM Freq in Hz
+        self.pwm_freq = 4000   # PWM Freq in Hz
         self.pwm_duty = 0      # PWM Duty in percent, default to 0
         self.stall_time = 250  # Motor stall time in mS
         
         self.encoder_count = IntVar()     # Antenna reed switch count
         self.encoder_count.set(0)
-        self.motor_rev = BooleanVar()     # Reverse motor leads
-        self.motor_rev.set(False)
         self.motor_running = False        # Motor running flag
         self.motor_stalled = False        # Motor stalled flag
         self.stall_active = False         # Stall detection active
-        self.stall_count = 0
+        self.stall_count = 0              # Encoder count during stall detection
         self.antenna_raising = False      # Motor direction flag
         self.ant_config_sect = ("null")   # Active ini file config section
         self.ant_preset_sect = ("null")   # Active ini file preset section
-        self.ant_preset_opt = ("null")    # Active ini file preset option
-        self.ant_preset_val = 0           # Preset encoder target value from combobox
-        self.status_message = StringVar() # Status message text for text_5
-        self.status_message.set ("Ready")
+        self.ant_preset_val = 0           # Preset encoder target value from ini presets
+        self.status_message = StringVar() # Status message text for text_2
         
         # Run init_window, which doesn't yet exist
         self.init_window()
@@ -83,75 +75,68 @@ class Window(Frame):
         helpmenu = Menu(menubar, tearoff=0)
         helpmenu.add_command(label="About", command=self.about)
         menubar.add_cascade(label="Help", menu=helpmenu)
-     
-        text_1 = Label(text='Antenna', font = ('Helvetica', 14),
-                       bg = self.bg_color, fg='black', padx=10, height=2, anchor=S)
-        text_1.grid(row=0, column=0, columnspan=1)
-     
-        text_2 = Label(text='Motor Control', font = ('Helvetica', 14),
-                       bg = self.bg_color, fg='black', padx=20, height=2, anchor=S)
-        text_2.grid(row=0, column=1, columnspan=1)
         
-        text_3 = Label(textvariable=self.encoder_count,
-                       font = ('Helvetica', 14), bg = self.bg_color, fg='black',
-                       padx=20, height=1, anchor=SW)
-        text_3.grid(row=3, column=0, columnspan=1, sticky=S)
-      
-        text_4 = Label(text='Current Preset',
-                       font = ('Helvetica', 14), bg = self.bg_color, fg='black',
-                       padx=20, height=1, anchor=S)
-        text_4.grid(row=3, column=1, columnspan=1, sticky=S)
+        text_1 = Label(textvariable=self.encoder_count, font = ('Helvetica', 30),
+                       bg = self.bg_color, fg='black', pady=5, height=1)
+        text_1.grid(row=0, column=0, rowspan=2, pady=1, sticky=S)
         
-        text_5 = Label(text='Status:',
-                       font = ('Helvetica', 11), bg = self.bg_color, fg='black',
-                       padx=5, height=1, anchor=E)
-        text_5.grid(row=6, column=0, columnspan=1, sticky=E)
+        text_2 = Label(text='Status:', font = ('Helvetica', 14),
+                       bg = self.bg_color, fg='black', padx=10, height=1, anchor=S)
+        text_2.grid(row=0, column=1, columnspan=1, sticky=S)
         
-     
-        text_6 = Label(textvariable=self.status_message,
-                       font = ('Helvetica', 11), bg='white', fg='black',
-                       padx=5, height=1, anchor=W, width=23,
+        text_3 = Label(textvariable=self.status_message, font = ('Helvetica', 12),
+                       bg='white', fg='black', padx=5, height=1, anchor=NW, width=21,
                        borderwidth=1, relief="solid")
-        text_6.grid(row=6, column=1, columnspan=1, sticky=W)
+        text_3.grid(row=1, column=1, sticky=N)
+        
+        text_4 = Label(text='Motor Speed %', font = ('Helvetica', 14),
+                       bg = self.bg_color, fg='black', padx=10, height=1, anchor=S)
+        text_4.grid(row=2, column=1, columnspan=1, sticky=S)
+        
+        text_5 = Label(text='Antenna', font = ('Helvetica', 14),
+                       bg = self.bg_color, fg='black', padx=20, height=1, anchor=S)
+        text_5.grid(row=4, column=1, columnspan=1, sticky=S)
+        
+        text_6 = Label(text='Preset',  font = ('Helvetica', 14),
+                       bg = self.bg_color, fg='black', padx=20, height=1, anchor=S)
+        text_6.grid(row=6, column=1, columnspan=1, sticky=S)
         
         self.raise_button = Button(text='Raise', relief=RAISED, bd=4, padx=1,
                pady=1, height=2, width=6, font=('Helvetica', 14))
-        self.raise_button.grid(row=1,column=0, padx=20, pady=5)
+        self.raise_button.grid(row=2, column=0, padx=20, pady=5, rowspan=2)
         self.raise_button.bind("<ButtonPress>", self.raise_button_press)
         self.raise_button.bind("<ButtonRelease>", self.RL_button_release)
         
         self.lower_button = Button(text='Lower', relief=RAISED, bd=4, padx=1,
                pady=1, height=2, width=6, font=('Helvetica', 14))
-        self.lower_button.grid(row=2, column=0, padx=20, pady=5)
+        self.lower_button.grid(row=4, column=0, padx=20, pady=5, rowspan=2)
         self.lower_button.bind("<ButtonPress>", self.lower_button_press)
         self.lower_button.bind("<ButtonRelease>", self.RL_button_release)
      
-        self.move_button = Button(text='Move', relief=RAISED, bd=4, padx=1,
+        self.preset_button = Button(text='Preset', relief=RAISED, bd=4, padx=1,
                pady=1, height=2, width=6, font=('Helvetica', 14))
-        self.move_button.grid(row=4,column=0, padx=5, pady=5, rowspan=2)
-        self.move_button.bind("<ButtonPress>", self.move_button_press)
+        self.preset_button.grid(row=6, column=0, padx=5, pady=5, rowspan=2)
+        self.preset_button.bind("<ButtonPress>", self.preset_button_press)
         
-        self.duty_scale = Scale(label='PWM Duty Cycle (%)', from_=1, to=100, orient = HORIZONTAL,
-                               resolution = 1, length=200, command = self.update_pwm_duty)
-        self.duty_scale.grid(row=1,column=1)
+        self.duty_scale = Scale(from_=1, to=100, orient = HORIZONTAL,
+                                resolution = 1, length=200,
+                                command = self.update_pwm_duty)
+        self.duty_scale.grid(row=3,column=1)
      
-        self.freq_scale = Scale(label='PWM Frequency (Hz)', from_=50, to=8000, orient = HORIZONTAL,
-                                resolution = 1, length=200, command = self.update_pwm_freq)
-        self.freq_scale.grid(row=2,column=1)
-        
-        self.motor_rev_btn = Checkbutton(text="Reverse Leads", bg = self.bg_color,
-                                         activebackground = self.bg_color,
-                                         highlightthickness=0, variable=self.motor_rev)
-        self.motor_rev_btn.grid(row=5, column=1, sticky=W)
+        # Antenna preset combo box is populated with values from ini file
+        self.antenna_combobox = ttk.Combobox(width=18, font=('Helvetica', 14),
+                                            state='readonly')
+        self.antenna_combobox.grid(row=5, column=1, sticky=N)
+        self.antenna_combobox.bind("<<ComboboxSelected>>", self.get_antenna_val)
         
         # Antenna preset combo box is populated with values from ini file
         self.preset_combobox = ttk.Combobox(width=18, font=('Helvetica', 14),
                                             state='readonly')
-        self.preset_combobox.grid(row=4, column=1)
+        self.preset_combobox.grid(row=7, column=1, sticky=N)
         self.preset_combobox.bind("<<ComboboxSelected>>", self.get_preset_val)
         
         self.ini_test ()  # Check for ini file existence
-        self.ini_read()   # Read ini file for settings       
+        self.ini_read()   # Retrieve ini file settings       
         self.gpioconfig() # Set up GPIO for antenna control
         
         return
@@ -167,8 +152,8 @@ class Window(Frame):
     def RL_button_release(self, _unused):
         self.motor_stop ()
         self.status_message.set ("Ready")
-     
-    def move_button_press(self, _unused):
+
+    def preset_button_press(self, _unused):
         self.motor_stalled = 0
         self.motor_move()
         
@@ -182,9 +167,9 @@ class Window(Frame):
             # Overwrite the ini file and refresh values
             self.ini_new()
             self.ini_read()
-            self.status_message.set ("ini written")
+            self.status_message.set ("RPiAntDrv.ini written")
         else:
-            self.status_message.set ("operation Cancelled")
+            self.status_message.set ("Operation cancelled")
             
     def confirm_sync(self):
         okay = messagebox.askokcancel('RPiAntDrv',
@@ -195,9 +180,9 @@ class Window(Frame):
         if okay:
             # Sychronize encoder count with current preset value
             self.encoder_count.set(self.ant_preset_val)
-            self.status_message.set ("Syncronized")
+            self.status_message.set ("Encoder syncronized")
         else:
-            self.status_message.set ("Sync Canceled")
+            self.status_message.set ("Encoder sync canceled")
         
     def motor_up(self):
         # We can change speed on the fly
@@ -206,12 +191,8 @@ class Window(Frame):
         # If motor is not already running and in correct direction
         if not(self.motor_running and self.antenna_raising):
             # check reverse motor lead flag
-            if self.motor_rev.get() == 0:
-                GPIO.output(self.dir1_pin, GPIO.HIGH) # Run motor FWD
-                GPIO.output(self.dir2_pin, GPIO.LOW)
-            else:
-                GPIO.output(self.dir1_pin, GPIO.LOW) # Run Motor REV
-                GPIO.output(self.dir2_pin, GPIO.HIGH)
+            GPIO.output(self.dir1_pin, GPIO.HIGH) # Run motor FWD
+            GPIO.output(self.dir2_pin, GPIO.LOW)
             self.antenna_raising = 1
             self.motor_running = 1
             # Initialize stall counter and start stall timer
@@ -223,13 +204,8 @@ class Window(Frame):
         self.pwm_set.ChangeDutyCycle(self.pwm_duty)
         # If motor is not running and in correct direction
         if not(self.motor_running and not self.antenna_raising):
-            # check reverse motor lead flag
-            if self.motor_rev.get() == 0:
-                GPIO.output(self.dir1_pin, GPIO.LOW) # Run motor
-                GPIO.output(self.dir2_pin, GPIO.HIGH)
-            else:
-                GPIO.output(self.dir1_pin, GPIO.HIGH) # Run Motor
-                GPIO.output(self.dir2_pin, GPIO.LOW)
+            GPIO.output(self.dir1_pin, GPIO.LOW) # Run motor
+            GPIO.output(self.dir2_pin, GPIO.HIGH)
             self.motor_running = 1
             self.antenna_raising = 0
             # Initialize stall detection
@@ -241,16 +217,14 @@ class Window(Frame):
         self.pwm_set.ChangeDutyCycle(0)      # Kill PWM
         self.motor_running = 0
         #self.ini_update()
-     
+
     def motor_stall(self):
         # Set stall period proportional to motor speed
-        # self.stall_time = int(250)
         self.stall_period = int((100 / self.duty_scale.get())* self.stall_time)
         # If motor is still running, perform stall check
         if (self.motor_running):
             # If stall detection is not already active
             if not(self.stall_active):
-                # print ('stall period ' + str(self.stall_period))
                 self.stall_count = self.encoder_count.get()
                 self.stall_active = 1
                 self.master.after(self.stall_period, self.motor_stall)
@@ -263,13 +237,11 @@ class Window(Frame):
             # Else reset stall count and timer
             else:
                 self.stall_count = self.encoder_count.get()
-                #print ('No stall, proceed')
                 self.master.after(self.stall_period, self.motor_stall)
         else:
             self.stall_active = 0
              
     def motor_move(self):
-        #print (_unused)
         # If motor is stalled, exit
         if (self.motor_stalled == 1):
             return
@@ -298,6 +270,14 @@ class Window(Frame):
         # after 100mS, call this function again
         self.master.after(100, self.motor_move)
      
+    def get_antenna_val(self, _unused):
+        # fetch new antenna configuration and presets
+        config = configparser.ConfigParser()
+        config.optionxform=str
+        config.read ('RPiAntDrv.ini')
+        self.last_antenna = self.antenna_combobox.get()
+        self.ini_refresh(config)
+        
     def get_preset_val(self, _unused):
         # get the preset value stored in the ini file
         config = configparser.ConfigParser()
@@ -307,10 +287,6 @@ class Window(Frame):
         
     def update_pwm_duty(self, _unused):
         self.pwm_duty = self.duty_scale.get()
-        #print (_unused)
-     
-    def update_pwm_freq(self, _unused):
-        self.pwm_freq = self.freq_scale.get()
         #print (_unused)
         
     def gpioconfig(self): # Configure GPIO pins
@@ -345,51 +321,45 @@ class Window(Frame):
     def ini_new(self): # Set up an ini file if it does not exist
         # Configuration file parser to read and write ini file
         config = configparser.ConfigParser()
+        # Make options case sensitive
+        config.optionxform = str
         # User configurable program settings
         config['Settings'] = {'pwm_pin':'12',
                               'dir1_pin':'16',
                               'dir2_pin':'18',
                               'encoder_pin':'22',
                               'last_position':'0',
-                              'ant_config_sect':'Ant1_Config',
-                              'ant_preset_sect':'Ant1_Preset',
-                              'ant_preset_opt':'20m 14.400 (037)'}
+                              'last_antenna':'Antenna 1',
+                              'antennas':'Antenna 1, Antenna 2' ,
+                              'last_preset':'20m 14.400 (037)'}
         
         # Set up default antennas
-        config['Ant1_Config'] = {'name':'Antenna1',
-                               'rev_pol':'no',
-                               'pwm_freq':'4000',
-                               'pwm_duty':'50',
-                               'stall_time':'250',
-                               'min_freq':'3500',
-                               'max_freq':'29700'}
+        config['Antenna 1_Config'] = {'pwm_freq':'4000',
+                                      'pwm_duty':'50',
+                                      'stall_time':'250'}
         
-        config['Ant1_Preset'] = {'80m _3.500 (226)':'226',
-                                '80m _4.000 (192)':'192',
-                                '60m _5.300 (130)':'130',
-                                '60m _5.400 (127)':'127',
-                                '40m _7.000 (092)':'92',
-                                '40m _7.300 (087)':'87',
-                                '30m 10.000 (056)':'56',
-                                '30m 10.200 (054)':'54',
-                                '20m 14.000 (039)':'39',
-                                '20m 14.400 (037)':'37',
-                                'Park Pos.  (000)':'0'}        
+        config['Antenna 1_Preset'] = {'80m _3.500 (226)':'226',
+                                      '80m _4.000 (192)':'192',
+                                      '60m _5.300 (130)':'130',
+                                      '60m _5.400 (127)':'127',
+                                      '40m _7.000 (092)':'92',
+                                      '40m _7.300 (087)':'87',
+                                      '30m 10.000 (056)':'56',
+                                      '30m 10.200 (054)':'54',
+                                      '20m 14.000 (039)':'39',
+                                      '20m 14.400 (037)':'37',
+                                      'Park Pos.  (000)':'0'}        
      
-        config['Ant2_Config'] = {'name':'Antenna2',
-                               'rev_pol':'yes',
-                               'pwm_freq':'2000',
-                               'pwm_duty':'50',
-                               'stall_time':'250',
-                               'min_freq':'3500',
-                               'max_freq':'29700'}
+        config['Antenna 2_Config'] = {'pwm_freq':'2000',
+                                      'pwm_duty':'50',
+                                      'stall_time':'250'}
         
-        config['Ant2_Preset'] = {'80m _3.700 (200)':'200',
-                                '60m _5.350 (129)':'129',
-                                '40m _7.250 (090)':'90',
-                                '30m 10.100 (055)':'55',
-                                '20m 14.200 (038)':'38',
-                                'Park Pos.  (000)':'0'}
+        config['Antenna 2_Preset'] = {'80m _3.700 (200)':'200',
+                                      '60m _5.350 (129)':'129',
+                                      '40m _7.250 (090)':'90',
+                                      '30m 10.100 (055)':'55',
+                                      '20m 14.200 (038)':'38',
+                                      'Park Pos.  (000)':'0'}
         
         # Save the default configuration file
         with open('RPiAntDrv.ini', 'w') as configfile:
@@ -400,41 +370,57 @@ class Window(Frame):
         try:
             with open('RPiAntDrv.ini') as _file:
                 # pass condition
-                print ("Ini file found")
+                self.status_message.set ("Configuration file loaded")
         except IOError as _e:
             #Does not exist OR no read permissions
-            print ("Unable to open Ini file, creating new one.")
+            self.status_message.set ("Configuration file created")
             self.ini_new ()
      
     def ini_read(self):
         # Read ini file and set up parameters
         config = configparser.ConfigParser()
+        # Make options case sensitive
+        config.optionxform = str
         config.read ('RPiAntDrv.ini')
-        # Retrieve settings
+        # Retrieve I/O pin assignments
         self.pwm_pin = (config.getint ('Settings','pwm_pin',fallback=12))
         self.dir1_pin = (config.getint ('Settings','dir1_pin',fallback=16))
         self.dir2_pin = (config.getint ('Settings','dir2_pin',fallback=18))
         self.encoder_pin = (config.getint ('Settings','encoder_pin',fallback=22))
-        self.freq_scale.set(config.getint ('Ant1_Config','pwm_freq',fallback=4000))
-        self.duty_scale.set(config.getint ('Ant1_Config','pwm_duty',fallback=50))
-        self.stall_time = (config.getint ('Ant1_Config','stall_time',fallback=250))
-        # Set up the active ini file section and option names
-        self.ant_config_sect = (config.get ('Settings','ant_config_sect',fallback='Ant1_Config'))
-        self.ant_preset_sect = (config.get ('Settings','ant_preset_sect',fallback='Ant1_Preset'))
-        self.ant_preset_opt = (config.get ('Settings','ant_preset_opt',fallback='none'))
-        # Set up and populate the antenna preset combobox
-        self.preset_combobox['values']=(config.options(self.ant_preset_sect))
-        self.preset_combobox.set(self.ant_preset_opt)
-        # Set the encoder count to preset value
+        # Restore the encoder count to preset value
         self.encoder_count.set (config.getint('Settings','last_position',fallback=0))
-        self.status_message.set ("Configuration file loaded")
+        self.ant_preset_val = self.encoder_count.get()       
+        # Retrieve the last antenna used and restore saved state
+        # Grab CSV list of antennas to act as combobox values and keys
+        # The .strip method removes leading and trailing spaces from .split list
+        _antennas = (config.get('Settings','antennas',fallback="Antenna 1"))
+        self.antenna_combobox['values']=[item.strip() for item in _antennas.split(',')]         
+        self.last_antenna = (config.get('Settings','last_antenna',fallback="Antenna 1"))
+        self.antenna_combobox.set(self.last_antenna)
+        self.preset_combobox.set(config.get('Settings','last_preset',fallback=1))
+        
+        # refresh antenna settings and presets
+        self.ini_refresh(config)
+        
+    def ini_refresh (self,config):
+        # Using selected antenna refresh antenna settings and presets
+        self.ant_config_sect = (self.last_antenna + '_Config')
+        self.ant_preset_sect = (self.last_antenna + '_Preset')
+        self.pwm_freq = (config.getint (self.ant_config_sect,'pwm_freq',fallback=4000))
+        self.duty_scale.set(config.getint (self.ant_config_sect,'pwm_duty',fallback=50))
+        self.stall_time = (config.getint (self.ant_config_sect,'stall_time',fallback=250))
+        self.preset_combobox['values']=(config.options(self.ant_preset_sect))
         
     def ini_update(self):
         config = configparser.ConfigParser()
+        # Make options case sensitive
+        config.optionxform = str
         # Perform read-modify-write of ini file
         # Note: Anytyhing written must be a string value
         config.read ('RPiAntDrv.ini')
-        config.set('Settings','last_position',str(self.encoder_count.get()))
+        config.set ('Settings','last_position',str(self.encoder_count.get()))
+        config.set ('Settings','last_antenna',self.antenna_combobox.get())
+        config.set ('Settings','last_preset',self.preset_combobox.get())     
         # Save modified configuration file
         with open('RPiAntDrv.ini', 'w') as configfile:
             config.write(configfile)
@@ -444,7 +430,7 @@ class Window(Frame):
         self.ini_update()   # Save current settings
         GPIO.cleanup()
         self.master.destroy()
-        print ("GPIO cleanup executed")
+        #print ("GPIO cleanup executed")
         
     def about(self):
         popup = Toplevel()
@@ -467,7 +453,7 @@ class Window(Frame):
         popup_text2.grid(row=1, column=0, columnspan=1)
         
         popup.mainloop()
-
+     
 def main():
 
     # root window created. Here, that would be the only window, but
