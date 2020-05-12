@@ -11,9 +11,10 @@
 #
 ##################################################################
 
-from tkinter import *
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import Tk, ttk, messagebox, Frame, Menu, Label, Button
+from tkinter import Scale, IntVar, StringVar, Toplevel
+from tkinter import RAISED, HORIZONTAL, LEFT, S, W, SW, NW
+from pathlib import Path
 import configparser
 import RPi.GPIO as GPIO
 
@@ -27,9 +28,14 @@ class Window(Frame):
         #reference to the master widget, which is the tk window                 
         self.master = master
         
+        # Retrieve parent script directory for absolute addressing
+        self.base_path = Path(__file__).parent
+        self.ini_path = str(self.base_path)+'/RPiAntDrv.ini'
+        #print (self.ini_path)
+        
         # Raspberry Pi I/O pins get reassigned when ini file is read
         self.pwm_freq = 4000   # PWM Freq in Hz
-        self.pwm_duty = 0      # PWM Duty in percent, default to 0
+        self.pwm_duty = 0      # PWM Duty in percent, default to 0%
         self.stall_time = 250  # Motor stall time in mS
         
         self.encoder_count = IntVar()     # Antenna reed switch count
@@ -38,6 +44,8 @@ class Window(Frame):
         self.motor_stalled = False        # Motor stalled flag
         self.stall_active = False         # Stall detection active
         self.stall_count = 0              # Encoder count during stall detection
+        self.full_speed = 100             # Full speed PWM duty cycle
+        self.slow_speed = 25              # Slow speed PWM duty cycle
         self.antenna_raising = False      # Motor direction flag
         self.ant_config_sect = ("null")   # Active ini file config section
         self.ant_preset_sect = ("null")   # Active ini file preset section
@@ -190,7 +198,6 @@ class Window(Frame):
         
     def motor_up(self):
         # We can change speed on the fly
-        self.pwm_set.ChangeFrequency(self.pwm_freq)
         self.pwm_set.ChangeDutyCycle(self.pwm_duty)
         # If motor is not already running and in correct direction
         if not(self.motor_running and self.antenna_raising):
@@ -201,10 +208,9 @@ class Window(Frame):
             self.motor_running = 1
             # Initialize stall counter and start stall timer
             self.motor_stall()
-         
+        
     def motor_down(self):
         # We can change speed on the fly
-        self.pwm_set.ChangeFrequency(self.pwm_freq)
         self.pwm_set.ChangeDutyCycle(self.pwm_duty)
         # If motor is not running and in correct direction
         if not(self.motor_running and not self.antenna_raising):
@@ -214,7 +220,7 @@ class Window(Frame):
             self.antenna_raising = 0
             # Initialize stall detection
             self.motor_stall()
-         
+        
     def motor_stop(self):
         GPIO.output(self.dir1_pin, GPIO.LOW) # Stop motor
         GPIO.output(self.dir2_pin, GPIO.LOW)
@@ -259,11 +265,11 @@ class Window(Frame):
         Hval= (self.ant_preset_val +6)
         if self.encoder_count.get() in range(Lval, Hval):
             self.status_message.set ("Slowing down")
-            self.duty_scale.set(25)
+            self.duty_scale.set(self.slow_speed)
         # Else run full speed    
         else:
             self.status_message.set ("Full speed")
-            self.duty_scale.set(100)
+            self.duty_scale.set(self.full_speed)
             
         # If encoder count > preset drive antenna down
         if self.encoder_count.get() > (self.ant_preset_val):
@@ -273,22 +279,23 @@ class Window(Frame):
             self.motor_up()
         # after 100mS, call this function again
         self.master.after(100, self.motor_move)
-         
+        
     def get_antenna_val(self, _unused):
         # fetch new antenna configuration and presets
         config = configparser.ConfigParser()
-        config.read ('RPiAntDrv.ini')
+        config.read (self.ini_path)
         self.last_antenna = self.antenna_combobox.get()
-        self.ini_refresh(config)
-         
+        self.ant_refresh(config)
+        self.pwm_set.ChangeFrequency(self.pwm_freq)
+        
     def get_preset_val(self, _unused):
         # get the preset value stored in the ini file
         config = configparser.ConfigParser()
-        config.read ('RPiAntDrv.ini')
+        config.read (self.ini_path)
         self.ant_preset_val = (config.getint(self.ant_preset_sect,
                                              self.preset_combobox.get()))
         #print (self.ant_preset_val)
-         
+        
     def update_pwm_duty(self, _unused):
         self.pwm_duty = self.duty_scale.get()
         #print (_unused)
@@ -327,10 +334,10 @@ class Window(Frame):
         # Configuration file parser to read and write ini file
         config = configparser.ConfigParser()
         # User configurable program settings
-        config['Settings'] = {'pwm_pin':'12',
-                              'dir1_pin':'16',
-                              'dir2_pin':'18',
-                              'encoder_pin':'22',
+        config['Settings'] = {'pwm_pin':'13',
+                              'dir1_pin':'15',
+                              'dir2_pin':'19',
+                              'encoder_pin':'11',
                               'last_position':'0',
                               'last_antenna':'Antenna 1',
                               'antennas':'Antenna 1, Antenna 2' ,
@@ -338,24 +345,36 @@ class Window(Frame):
         
         # Set up default antennas
         config['Antenna 1_Config'] = {'pwm_freq':'4000',
-                                      'pwm_duty':'50',
+                                      'full_speed':'100',
+                                      'slow_speed':'25',
                                       'stall_time':'250'}
         
         config['Antenna 1_Preset'] = {'maximum    (270)':'270',
                                       '80m _3.500 (226)':'226',
+                                      '80m _3.580 (221)':'221',
+                                      '80m _3.800 (206)':'206',
+                                      '80m _3.900 (199)':'199',
                                       '80m _4.000 (192)':'192',
                                       '60m _5.300 (130)':'130',
                                       '60m _5.400 (127)':'127',
-                                      '40m _7.000 (092)':'92',
+                                      '40m _7.035 (091)':'91',
+                                      '40m _7.175 (089)':'89',
                                       '40m _7.300 (087)':'87',
                                       '30m 10.000 (056)':'56',
+                                      '30m 10.100 (055)':'55',
                                       '30m 10.200 (054)':'54',
                                       '20m 14.000 (039)':'39',
+                                      '20m 14.200 (038)':'38',
                                       '20m 14.400 (037)':'37',
+                                      '15m 21.275 (019)':'19',
+                                      '12m 24.930 (014)':'14',
+                                      '10m 28.000 (008)':'8',
+                                      '10m 29.700 (006)':'6',
                                       'minimum    (000)':'0'}        
         
-        config['Antenna 2_Config'] = {'pwm_freq':'2000',
-                                      'pwm_duty':'50',
+        config['Antenna 2_Config'] = {'pwm_freq':'4000',
+                                      'full_speed':'95',
+                                      'slow_speed':'20',
                                       'stall_time':'250'}
         
         config['Antenna 2_Preset'] = {'maximum    (270)':'270',
@@ -367,13 +386,13 @@ class Window(Frame):
                                       'minimum    (000)':'0'}
         
         # Save the default configuration file
-        with open('RPiAntDrv.ini', 'w') as configfile:
+        with open(self.ini_path, 'w') as configfile:
             config.write(configfile)
             
     def ini_test(self):
         # Test to see if configuration file exists
         try:
-            with open('RPiAntDrv.ini') as _file:
+            with open(self.ini_path) as _file:
                 # pass condition
                 self.status_message.set ("Configuration file loaded")
         except IOError as _e:
@@ -384,7 +403,7 @@ class Window(Frame):
     def ini_read(self):
         # Read ini file and set up parameters
         config = configparser.ConfigParser()
-        config.read ('RPiAntDrv.ini')
+        config.read (self.ini_path)
         # Retrieve I/O pin assignments
         self.pwm_pin = (config.getint ('Settings','pwm_pin',fallback=12))
         self.dir1_pin = (config.getint ('Settings','dir1_pin',fallback=16))
@@ -403,14 +422,15 @@ class Window(Frame):
         self.preset_combobox.set(config.get('Settings','last_preset',fallback='None'))
         
         # refresh antenna settings and presets
-        self.ini_refresh(config)
+        self.ant_refresh(config)
         
-    def ini_refresh (self,config):
+    def ant_refresh (self,config):
         # Using selected antenna refresh antenna settings and presets
         self.ant_config_sect = (self.last_antenna + '_Config')
         self.ant_preset_sect = (self.last_antenna + '_Preset')
         self.pwm_freq = (config.getint (self.ant_config_sect,'pwm_freq',fallback=4000))
-        self.duty_scale.set(config.getint (self.ant_config_sect,'pwm_duty',fallback=50))
+        self.full_speed = (config.getint (self.ant_config_sect,'full_speed',fallback=100))
+        self.slow_speed = (config.getint (self.ant_config_sect,'slow_speed',fallback=25))
         self.stall_time = (config.getint (self.ant_config_sect,'stall_time',fallback=250))
         self.preset_combobox['values']=(config.options(self.ant_preset_sect))
         
@@ -418,20 +438,21 @@ class Window(Frame):
         config = configparser.ConfigParser()
         # Perform read-modify-write of ini file
         # Note: Anytyhing written must be a string value
-        config.read ('RPiAntDrv.ini')
+        config.read (self.ini_path)
         config.set ('Settings','last_position',str(self.encoder_count.get()))
         config.set ('Settings','last_antenna',self.antenna_combobox.get())
         config.set ('Settings','last_preset',self.preset_combobox.get())     
         # Save modified configuration file
-        with open('RPiAntDrv.ini', 'w') as configfile:
+        with open(self.ini_path, 'w') as configfile:
             config.write(configfile)
         self.status_message.set ("ini file updated")
         
     def close(self): # Cleanly close the GUI and cleanup the GPIO
         self.ini_update()   # Save current settings
         GPIO.cleanup()
+        #print ("GPIO cleanup executed")        
         self.master.destroy()
-        #print ("GPIO cleanup executed")
+        #print ("master window destroyed")
         
     def about(self):
         popup = Toplevel()
@@ -463,7 +484,7 @@ def main():
     app = Window(root) #creation of an instance
     root.protocol("WM_DELETE_WINDOW", app.close) # cleanup GPIO when X closes window
     root.mainloop() # Loops forever
-     
+    
 if __name__ == '__main__':
     main()
-     
+    
