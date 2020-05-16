@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.6
+Name=RPi Antenna Driver
+Comment=Radio Antenna Control
+Exec=RPiAntDrv.py
+Icon=RPiAntDrv_icon
+Terminal=false
+Type=Application
+Categories=HamRadio

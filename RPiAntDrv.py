@@ -227,7 +227,7 @@ class Window(Frame):
         self.pwm_set.ChangeDutyCycle(0)      # Kill PWM
         self.motor_running = 0
         #self.ini_update()
-     
+
     def motor_stall(self):
         # Set stall period proportional to motor speed
         self.stall_period = int((100 / self.duty_scale.get())* self.stall_time)
@@ -338,9 +338,9 @@ class Window(Frame):
                               'dir1_pin':'15',
                               'dir2_pin':'19',
                               'encoder_pin':'11',
+                              'antennas':'Antenna 1, Antenna 2',                              
                               'last_position':'0',
                               'last_antenna':'Antenna 1',
-                              'antennas':'Antenna 1, Antenna 2' ,
                               'last_preset':'20m 14.400 (037)'}
         
         # Set up default antennas
