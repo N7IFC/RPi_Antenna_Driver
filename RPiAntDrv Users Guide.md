@@ -34,15 +34,15 @@ The author(s) are not responsible for the use or misuse of this application prog
 
 **2.3.** The first section of the ini file should look similar to the following:
 
-[Settings]
-pwm_pin = 13
-dir1_pin = 15
-dir2_pin = 19
-encoder_pin = 11
-antennas = Antenna 1, Antenna 2
-last_position = 38
-last_antenna = Antenna 1
-last_preset = 20m 14.200 (038)
+[Settings]  
+pwm_pin = 13  
+dir1_pin = 15  
+dir2_pin = 19  
+encoder_pin = 11  
+antennas = Antenna 1, Antenna 2  
+last_position = 38  
+last_antenna = Antenna 1  
+last_preset = 20m 14.200 (038)  
 
 **2.4.** Set the RPi output header pins to match your hardware configuration. It is highly suggested to use pins that are logic low (0V) when the RPi is first booted. On the RPi model 4b header, suitable pins are typically 8, 11, 13, 15, 16, 18, 19, 21, 22, 23, 32, 33, 35, 36, 37, 38, and 40. Only connect these pins to 3V logic level circuits.
 
@@ -64,11 +64,11 @@ The default ini file defines two antennas but more may be added if desired by ad
 
 **2.10.** Each antenna has a configuration section that looks similar to the following:
 
-[Antenna 1_Config] 
-pwm_freq = 4000 
-full_speed = 100 
-slow_speed = 25 
-stall_time = 250 
+[Antenna 1_Config]  
+pwm_freq = 4000  
+full_speed = 100  
+slow_speed = 25  
+stall_time = 250  
 
 **2.11.** The key 'pwm_freq' is used to set the motor pwm frequency in Hz. Typically this is set to about 4,000 Hz for DC brushed motors in order to have good low speed torque and fairly quiet operation. The optimum value for your motor may be found experimentally and set in the ini file. It is suggested to stay below 20,000 as the pwm is software generated and switching losses also increase with frequency.
 
@@ -85,13 +85,13 @@ stall_time = 250
 **3.2.** Presets are stored as key = value pairs where the key is available to the user to select from and the value is the antenna's encoder value for that preset. The key names are always lower case and may be up to 20 characters long. An example preset section list may look like the following:
 
 [Antenna 2_Preset] 
-maximum    (270) = 270 
-80m _3.700 (200) = 200 
-60m _5.350 (129) = 129 
-40m _7.250 (090) = 90 
-30m 10.100 (055) = 55 
-20m 14.200 (038) = 38 
-minimum    (000) = 0 
+maximum    (270) = 270  
+80m _3.700 (200) = 200  
+60m _5.350 (129) = 129  
+40m _7.250 (090) = 90  
+30m 10.100 (055) = 55  
+20m 14.200 (038) = 38  
+minimum    (000) = 0  
 
 **3.3.** As mentioned in section 2 above, the preset section name must match the antenna name with "_Preset" appended to the antenna name.
 
