@@ -74,11 +74,11 @@ stall_time = 250
 
 **2.12.** The key 'full_speed' is used to set the % speed the motor will run when driving to a preset. The range is 1 to 100 percent (default 100).
 
-**2.12.** The key 'slow_speed' is used to set the % speed the motor will run when approaching a preset. This is useful to prevent overshooting a target preset value. The range is 1 to 100 percent (default 25).
+**2.13.** The key 'slow_speed' is used to set the % speed the motor will run when approaching a preset. This is useful to prevent overshooting a target preset value. The range is 1 to 100 percent (default 25).
 
-**2.13 The key 'stall_time' is the time in milliseconds where the program expects to see a pulse from the motor encoder when running at 100% speed. The program will automatically extend this time when running below 100% speed. If the program does not see an encoder pulse within the stall time, it will turn off power to the motor and notify the user of a stall event. If the antenna may be damaged by a stall condition (such as a hard stop), it is suggested that other hardware protections are installed such as a PTC auto-resetting fuse sized below the motors locked rotor current... The stall_time value may be found experimentally by starting around 100mS (0.1 seconds) and increasing the value until the antenna does not trigger a stall event under normal operation. The range is 10 to ~ 5,000 milliseconds (0.01 to 5 seconds, default 250mS).
+**2.14.** The key 'stall_time' is the time in milliseconds where the program expects to see a pulse from the motor encoder when running at 100% speed. The program will automatically extend this time when running below 100% speed. If the program does not see an encoder pulse within the stall time, it will turn off power to the motor and notify the user of a stall event. If the antenna may be damaged by a stall condition (such as a hard stop), it is suggested that other hardware protections are installed such as a PTC auto-resetting fuse sized below the motors locked rotor current... The stall_time value may be found experimentally by starting around 100mS (0.1 seconds) and increasing the value until the antenna does not trigger a stall event under normal operation. The range is 10 to ~ 5,000 milliseconds (0.01 to 5 seconds, default 250mS).
 
-## 3.0 ANTENNA PRESETS:
+### 3.0 ANTENNA PRESETS:
 
 **3.1.** Antenna presets may be added or edited any time by opening the RPiAntDrv.ini in the /home/pi/bin/ directory using a text editor such as Mousepad or nano.
 
