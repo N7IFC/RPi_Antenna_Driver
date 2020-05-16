@@ -105,6 +105,8 @@ minimum    (000) = 0
 
 ### 4.0 GRAPHICAL USER INTERFACE
 
+![Alt text](RPiAntDrv_Screenshot.png?raw=true "Screenshot")
+
 **4.1.** The GUI has a familiar windowed layout with some menu features not implemented. For operations not supported, the "About" window will be displayed.
 
 **4.2.** Encoder Count - This value is displayed in the upper left of the window and shows the antennas current position.
