@@ -64,11 +64,11 @@ The default ini file defines two antennas but more may be added if desired by ad
 
 **2.10.** Each antenna has a configuration section that looks similar to the following:
 
-[Antenna 1_Config]
-pwm_freq = 4000
-full_speed = 100
-slow_speed = 25
-stall_time = 250
+>[Antenna 1_Config]
+>pwm_freq = 4000
+>full_speed = 100
+>slow_speed = 25
+>stall_time = 250
 
 **2.11.** The key 'pwm_freq' is used to set the motor pwm frequency in Hz. Typically this is set to about 4,000 Hz for DC brushed motors in order to have good low speed torque and fairly quiet operation. The optimum value for your motor may be found experimentally and set in the ini file. It is suggested to stay below 20,000 as the pwm is software generated and switching losses also increase with frequency.
 
