@@ -1,6 +1,6 @@
 # Users Guide for the Raspberry Pi Antenna Driver
 
-## INTRODUCTION:
+### INTRODUCTION:
 
 RPiAntDrv.py is a Python GUI program script written for the Raspberry Pi for antenna control. The script controls a DC motor-tuned antenna via an H-Bridge and pulse encoder feedback. The H-Bridge drives a single DC motor using Pulse Width Modulation (PWM). The antenna must contain a simple pulse encoder output such as a reed switch activated by the antenna's drive mechanism. One compatible antenna is called a "Screwdriver Antenna" such as those made by Scorpion Antennas, Tarheel Antennas, Hi-Q-Antennas™, among others. Another antenna might be a tuned loop with a multi-turn variable capacitor.
  
@@ -8,11 +8,11 @@ Due to the fast response of the Raspberry Pi hardware I/O, it is highly recommen
 
 The application program supports multiple antenna profiles so that the same hardware can be used to control different antennas or different configurations of the same antenna. for example, a single screwdriver antenna may have several whip lengths, a capacity hat or a top wire added to get on 160 meters. Each of these configurations may be considered a different antenna by the program and easily selected by the user.
 
-## DISCLAIMER:
+### DISCLAIMER:
 
 The author(s) are not responsible for the use or misuse of this application program or example hardware. Safe use of the program and hardware is the sole responsibility of the end user. Refer to the MIT license.
 
-## 1.0 INSTALLATION:
+### 1.0 INSTALLATION:
 
 **1.1.** If you are updating to a new revision of RPiAntDrv.py, make a back-up copy of the RPiAntDrv.ini file for reference as it may be incompatible with the new revision. Delete or rename the old RPiAntDrv.ini file in the /home/pi/bin/ directory.
 
@@ -26,7 +26,7 @@ The author(s) are not responsible for the use or misuse of this application prog
 
 **1.6.** A RPiAntDrv.desktop file can be created in the directory /usr/share/applications/ and added to the Raspberry Pi desktop menu structure if you desire. An example desktop file and icon are available in the repository (RPiAntDrv.desktop, RPiAntDrv_icon.png). Place the icon file under usr/share/icons or usr/share/pixmaps.
 
-## 2.0 INITIAL SETUP:
+### 2.0 INITIAL SETUP:
 
 **2.1.** If not done previously, run the Python script "RPiAntDrv.py" in the /home/pi/bin/ directory. This will create a default configuration file called RPiAntDrv.ini in the /home/pi/bin/ directory. Once this file is created close the RPi Antenna Driver application.
 
@@ -103,7 +103,7 @@ minimum    (000) = 0
 
 **3.7.** Back-up the RPiAntDrv.ini file in a safe place so that presets may be restored if the Raspberry Pi file system becomes unusable.
 
-## 4.0 GRAPHICAL USER INTERFACE
+### 4.0 GRAPHICAL USER INTERFACE
 
 **4.1.** The GUI has a familiar windowed layout with some menu features not implemented. For operations not supported, the "About" window will be displayed.
 
