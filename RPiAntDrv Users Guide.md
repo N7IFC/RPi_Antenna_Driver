@@ -2,11 +2,11 @@
 
 ### INTRODUCTION:
 
-RPiAntDrv.py is a Python GUI program script written for the Raspberry Pi for antenna control. The script controls a DC motor-tuned antenna via an H-Bridge and pulse encoder feedback. The H-Bridge drives a single DC motor using Pulse Width Modulation (PWM). The antenna must contain a simple pulse encoder output such as a reed switch activated by the antenna's drive mechanism. One compatible antenna is called a "Screwdriver Antenna" such as those made by Scorpion Antennas, Tarheel Antennas, Hi-Q-Antennas™, among others. Another antenna might be a tuned loop with a multi-turn variable capacitor.
+RPiAntDrv.py is a Python GUI program script written for the Raspberry Pi (RPi) for antenna control. The script controls a DC motor-tuned antenna via an H-Bridge and pulse encoder feedback. The H-Bridge drives a single DC motor using Pulse Width Modulation (PWM). The antenna must contain a simple pulse encoder output such as a reed switch activated by the antenna's drive mechanism. One compatible antenna is called a "Screwdriver Antenna" such as those made by Scorpion Antennas, Tarheel Antennas, Hi-Q-Antennas™, among others. Another antenna might be a tuned loop with a multi-turn variable capacitor.
  
 Due to the fast response of the Raspberry Pi hardware I/O, it is highly recommended the encoder signal be conditioned and isolated with an opto-coupler and Schmitt trigger. One such integrated circuit that contains both is the ON Semiconductor / Fairchild H11L1M. An example circuit will be available in this repository soon.
 
-The application program supports multiple antenna profiles so that the same hardware can be used to control different antennas or different configurations of the same antenna. for example, a single screwdriver antenna may have several whip lengths, a capacity hat or a top wire added to get on 160 meters. Each of these configurations may be considered a different antenna by the program and easily selected by the user.
+The application program supports multiple antenna profiles so that the same hardware may be used to control different antennas or different configurations of the same antenna. for example, a single screwdriver antenna may have several whip lengths, a capacity hat or a top wire added to get on 160 meters. Each of these configurations may be considered a different antenna by the program and easily selected by the user.
 
 ### DISCLAIMER:
 
@@ -14,9 +14,9 @@ The author(s) are not responsible for the use or misuse of this application prog
 
 ### 1.0 INSTALLATION:
 
-**1.1.** If you are updating to a new revision of RPiAntDrv.py, make a back-up copy of the RPiAntDrv.ini file for reference as it may be incompatible with the new revision. Delete or rename the old RPiAntDrv.ini file in the /home/pi/bin/ directory.
+**1.1.** If you are updating to a new version of RPiAntDrv.py, make a back-up copy of the RPiAntDrv.ini file for reference as it may be incompatible with the new version. Delete or rename the old RPiAntDrv.ini file in the `/home/pi/bin/` directory.
 
-**1.2.** Copy the Python script "RPiAntDrv.py" to the Raspberry Pi /home/pi/bin/ directory.
+**1.2.** Copy the Python script "RPiAntDrv.py" to the Raspberry Pi `/home/pi/bin/` directory.
 
 **1.3.** Change permissions for RPiAntDrv.py to make it executable using command line or file manager.
 
@@ -24,13 +24,13 @@ The author(s) are not responsible for the use or misuse of this application prog
 
 **1.5.** Upon first running the script, a file called RPiAntDrv.ini will be created. This ini file must be edited to set up your particular antenna.
 
-**1.6.** A RPiAntDrv.desktop file can be created in the directory /usr/share/applications/ and added to the Raspberry Pi desktop menu structure if you desire. An example desktop file and icon are available in the repository (RPiAntDrv.desktop, RPiAntDrv_icon.png). Place the icon file under usr/share/icons or usr/share/pixmaps.
+**1.6.** A RPiAntDrv.desktop file can be created in the directory `/usr/share/applications/` and added to the Raspberry Pi desktop menu structure if you desire. An example desktop file and icon are available in the repository (RPiAntDrv.desktop, RPiAntDrv_icon.png). Place the icon file under `usr/share/icons` or `usr/share/pixmaps`.
 
 ### 2.0 INITIAL SETUP:
 
-**2.1.** If not done previously, run the Python script "RPiAntDrv.py" in the /home/pi/bin/ directory. This will create a default configuration file called RPiAntDrv.ini in the /home/pi/bin/ directory. Once this file is created close the RPi Antenna Driver application.
+**2.1.** If not done previously, run the Python script "RPiAntDrv.py" in the `/home/pi/bin/` directory. This will create a default configuration file called RPiAntDrv.ini in the `/home/pi/bin/` directory. Once this file is created close the RPi Antenna Driver application.
 
-**2.2.** Open the RPiAntDrv.ini in the /home/pi/bin/ directory using a text editor such as Mousepad or nano.
+**2.2.** Open the RPiAntDrv.ini in the `/home/pi/bin/` directory using a text editor such as Mousepad or nano.
 
 **2.3.** The first section of the ini file should look similar to the following:
 
@@ -80,7 +80,7 @@ The default ini file defines two antennas but more may be added if desired by ad
 
 ### 3.0 ANTENNA PRESETS:
 
-**3.1.** Antenna presets may be added or edited any time by opening the RPiAntDrv.ini in the /home/pi/bin/ directory using a text editor such as Mousepad or nano.
+**3.1.** Antenna presets may be added or edited any time by opening the RPiAntDrv.ini in the `/home/pi/bin/` directory using a text editor such as Mousepad or nano.
 
 **3.2.** Presets are stored as key = value pairs where the key is available to the user to select from and the value is the antenna's encoder value for that preset. The key names are always lower case and may be up to 20 characters long. An example preset section list may look like the following:
 
@@ -115,7 +115,7 @@ The default ini file defines two antennas but more may be added if desired by ad
 
 **4.4.** Raise and Lower Buttons - Used to manually control the antenna.
 
-**4.5.** Preset Button - Once a Preset Selection has been made, pressing this button will automatically drive the antenna to the preset position. The antenna will drive at full speed until nearing the preset where it will then slowly attain the preset.
+**4.5.** Preset Button - Once a Preset Selection has been made, pressing this button will automatically drive the antenna to the preset position. The antenna will drive at full speed until nearing the preset where it will then slow and attain the preset.
 
 **4.6.** Motor Speed - This sliding control is used to vary antenna tuning speed 1 - 100% speed.
 
