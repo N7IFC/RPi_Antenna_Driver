@@ -1,0 +1,2 @@
+configparser==3.5.0b2
+RPi.GPIO==0.7.0
