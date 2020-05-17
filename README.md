@@ -4,6 +4,7 @@ This repository contains a Python3 Tkinter GUI script written for Raspberry Pi (
 Due to the fast response of the Raspberry Pi hardware I/O, it is highly recommended the encoder signal be conditioned and isolated with an opto-coupler and Schmitt trigger. One such integrated circuit that contains both is the ON Semiconductor / Fairchild H11L1M. An example circuit will be available in this repository soon.
 
 Dependencies: See requirements.txt file in this repository. May also work fine with latest Python3 and RPi libraries.
+
 Installation: Refer to RPiAntDrv Users Guide.md in this repository.
 
 Screen shot:
