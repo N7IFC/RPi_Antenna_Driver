@@ -4,7 +4,7 @@
 
 RPiAntDrv.py is a Python GUI program script written for the Raspberry Pi (RPi) for antenna control. The script controls a DC motor-tuned antenna via an H-Bridge and pulse encoder feedback. The H-Bridge drives a single DC motor using Pulse Width Modulation (PWM). The antenna must contain a simple pulse encoder output such as a reed switch activated by the antenna's drive mechanism. One compatible antenna is called a "Screwdriver Antenna" such as those made by Scorpion Antennas, Tarheel Antennas, Hi-Q-Antennas™, among others. Another antenna might be a tuned loop with a multi-turn variable capacitor.
  
-Due to the fast response of the Raspberry Pi hardware I/O, it is highly recommended the encoder signal be conditioned and isolated with an opto-coupler and Schmitt trigger. One such integrated circuit that contains both is the ON Semiconductor / Fairchild H11L1M. An example circuit will be available in this repository soon.
+Due to the fast response of the Raspberry Pi hardware I/O, it is highly recommended the encoder signal be conditioned and isolated with an opto-coupler and Schmitt trigger. One such integrated circuit that contains both is the ON Semiconductor / Fairchild H11L1M. An example schematic is available in this repository (RPiAntDrv Example Schematic.pdf).
 
 The application program supports multiple antenna profiles so that the same hardware may be used to control different antennas or different configurations of the same antenna. for example, a single screwdriver antenna may have several whip lengths, a capacity hat or a top wire added to get on 160 meters. Each of these configurations may be considered a different antenna by the program and easily selected by the user.
 
