@@ -334,9 +334,9 @@ class Window(Frame):
         # Configuration file parser to read and write ini file
         config = configparser.ConfigParser()
         # User configurable program settings
-        config['Settings'] = {'pwm_pin':'13',
-                              'dir1_pin':'15',
-                              'dir2_pin':'19',
+        config['Settings'] = {'pwm_pin':'19',
+                              'dir1_pin':'13',
+                              'dir2_pin':'15',
                               'encoder_pin':'11',
                               'antennas':'Antenna 1, Antenna 2',                              
                               'last_position':'0',
@@ -405,10 +405,10 @@ class Window(Frame):
         config = configparser.ConfigParser()
         config.read (self.ini_path)
         # Retrieve I/O pin assignments
-        self.pwm_pin = (config.getint ('Settings','pwm_pin',fallback=12))
-        self.dir1_pin = (config.getint ('Settings','dir1_pin',fallback=16))
-        self.dir2_pin = (config.getint ('Settings','dir2_pin',fallback=18))
-        self.encoder_pin = (config.getint ('Settings','encoder_pin',fallback=22))
+        self.pwm_pin = (config.getint ('Settings','pwm_pin',fallback=19))
+        self.dir1_pin = (config.getint ('Settings','dir1_pin',fallback=13))
+        self.dir2_pin = (config.getint ('Settings','dir2_pin',fallback=15))
+        self.encoder_pin = (config.getint ('Settings','encoder_pin',fallback=11))
         # Restore the encoder count to preset value
         self.encoder_count.set (config.getint('Settings','last_position',fallback=0))
         self.ant_preset_val = self.encoder_count.get()       
