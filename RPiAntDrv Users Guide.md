@@ -35,9 +35,9 @@ The author(s) are not responsible for the use or misuse of this application prog
 **2.3.** The first section of the ini file should look similar to the following:
 
 	[Settings]  
-	pwm_pin = 13  
-	dir1_pin = 15  
-	dir2_pin = 19  
+	pwm_pin = 19  
+	dir1_pin = 13  
+	dir2_pin = 15  
 	encoder_pin = 11  
 	antennas = Antenna 1, Antenna 2  
 	last_position = 38  
